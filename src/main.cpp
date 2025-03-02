@@ -136,21 +136,23 @@ void loop() {
   // Display
   tft.setTextSize(2);           
   tft.setTextColor(TFT_WHITE);  
-  tft.setCursor(20, 50);      
+  tft.setCursor(20, 60);      
   tft.print("CO2 [ppm]: ");
   tft.print(co2Concentration);
 
   tft.setTextSize(2);           
   tft.setTextColor(TFT_WHITE);  
-  tft.setCursor(20, 100 );      
+  tft.setCursor(20, 110 );      
   tft.print("Temp. [°C]: ");
   tft.print(temperature);
 
-  tft.setTextSize(2);           
-  tft.setTextColor(TFT_WHITE);  
-  tft.setCursor(20, 150);      
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_WHITE);
+  tft.setCursor(20, 160);
   tft.print("Humidity [RH]: ");
   tft.print(relativeHumidity);
   delay(5000);
-  tft.fillScreen(TFT_BLACK);  // clear screen
+  tft.fillRect(150, 50, 80, 35, TFT_RED);  // Clears a specific rectangle
+  tft.fillRect(160, 100, 70, 35, TFT_BLUE);  // Clears a specific rectangle
+  tft.fillRect(195, 150, 70, 35, TFT_DARKGREEN);  // Clears a specific rectangle
 }
