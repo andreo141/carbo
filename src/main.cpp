@@ -152,7 +152,7 @@ void loop() {
   tft.print("Humidity [RH]: ");
   tft.print(relativeHumidity);
   delay(5000);
-  tft.fillRect(150, 50, 80, 35, TFT_BLACK);  // Clears a specific rectangle
-  tft.fillRect(160, 100, 70, 35, TFT_BLACK);  // Clears a specific rectangle
-  tft.fillRect(195, 150, 70, 35, TFT_BLACK);  // Clears a specific rectangle
+  tft.fillRect(150, 50, 80, 35, TFT_BLACK);
+  tft.fillRect(160, 100, 70, 35, TFT_BLACK);
+  tft.fillRect(195, 150, 70, 35, TFT_BLACK);
 }
