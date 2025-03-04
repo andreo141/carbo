@@ -34,9 +34,6 @@ void setup() {
   // Draw static content (labels)
   display->drawStaticContent();
 
-  // Initialize with zeros
-  // display->updateValues(0, 0.0, 0.0);
-
   Serial.println("Setup complete!");
 }
 
