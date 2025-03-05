@@ -5,13 +5,13 @@ SCD4x mySensor;
 
 // Include the appropriate display based on build flag
 #if DISPLAY_TYPE == EINK
-  #include "EinkDisplay.h"
-  EinkDisplay* display = new EinkDisplay();
-  #define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for eink
+#include "EinkDisplay.h"
+EinkDisplay* display = new EinkDisplay();
+#define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for eink
 #else
-  #include "LcdDisplay.h"
-  LcdDisplay* display = new LcdDisplay();
-  #define DISPLAY_UPDATE_INTERVAL 5000  // 5 second for LCD
+#include "LcdDisplay.h"
+LcdDisplay* display = new LcdDisplay();
+#define DISPLAY_UPDATE_INTERVAL 5000  // 5 second for LCD
 #endif
 
 void setup() {
