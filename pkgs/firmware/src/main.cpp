@@ -1,5 +1,10 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
+#include <AsyncJson.h>
+#include "SPIFFS.h"
 #include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
 SCD4x mySensor;
 #define EINK EINK
@@ -16,9 +21,56 @@ SCD4x mySensor;
   #define DISPLAY_UPDATE_INTERVAL 5000  // 5 second for LCD
 #endif
 
+uint16_t co2 = 0;
+float temperature = 0.0f;
+float humidity = 0.0f;
+
+const char* ssid = "...";
+const char* password = "...";
+
+static AsyncWebServer server(80);
+
 void setup() {
   Serial.begin(115200);
   Wire.begin();
+
+  // Setup SPIFFS (file storage)
+  if(!SPIFFS.begin(true)){
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+
+  // Setup wifi
+  WiFi.begin(ssid, password);
+  int result = WiFi.waitForConnectResult();
+  if(result == WL_CONNECTED){
+    Serial.println("");
+    Serial.print("Wifi connected, IP address:");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.print("Wifi not connected!");
+  }
+
+  // Setup server
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(SPIFFS, "/index.html", "text/html");
+  });
+  server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(SPIFFS, "/main.js", "text/javascript");
+  });
+  server.on("/data", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String response;
+    JsonDocument data;
+
+    data["co2"] = co2;
+    data["humidity"] = humidity;
+    data["temperature"] = temperature;
+
+    serializeJson(data, response);
+
+    request->send(200, "application/json", response);
+  });
+  server.begin();
 
   // mySensor.enableDebugging(); // Uncomment this line to get helpful debug messages on Serial
   //.begin will start periodic measurements
@@ -40,10 +92,6 @@ void setup() {
 }
 
 void loop() {
-  uint16_t co2 = 0;
-  float temperature = 0.0f;
-  float humidity = 0.0f;
-
   if (mySensor.readMeasurement()) // readMeasurement will return true when fresh data is available
   {
     co2 = mySensor.getCO2();
@@ -61,5 +109,7 @@ void loop() {
   else
     Serial.print(F("."));
 
+  // Toggle this to display memory usage
+  //Serial.printf("Free Heap: %d\n", ESP.getFreeHeap());
   delay(DISPLAY_UPDATE_INTERVAL);
 }
