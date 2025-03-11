@@ -2,18 +2,23 @@
 #define LCD_DISPLAY_H
 
 #include <TFT_eSPI.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
+
 
 class LcdDisplay {
-    public:
-        LcdDisplay();
-        void begin();
-        void drawStaticContent();
-        void updateValues(uint16_t co2, float temperature, float humidity);
-    private:
-        TFT_eSPI tft;
-        void drawLabel(const char* label, int16_t x, int16_t y);
-        void drawValue(const char* value, int16_t x, int16_t y);
+public:
+    void begin();
+    void clear();
+    void drawStaticContent();
+    void updateValues(uint16_t co2, float temperature, float humidity);
+    static constexpr int LABEL_X = 20;
+    static constexpr int VALUE_X = 170;
+    static constexpr int FIRST_ROW_Y = 80;
+    static constexpr int ROW_SPACING = 50;
+    static constexpr int VALUE_WIDTH = 120;
+private:
+    TFT_eSPI tft;
+    void drawLabel(const char* label, int16_t x, int16_t y);
+    void drawValue(const char* value, int16_t x, int16_t y);
 };
 
 #endif
