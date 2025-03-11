@@ -2,13 +2,15 @@
 #include <Wire.h>
 #include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
 SCD4x mySensor;
+#define EINK EINK
+#define LCD LCD
 
 // Include the appropriate display based on build flag
 #if DISPLAY_TYPE == EINK
   #include "EinkDisplay.h"
   EinkDisplay* display = new EinkDisplay();
   #define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for eink
-#else
+#elif DISPLAY_TYPE == LCD
   #include "LcdDisplay.h"
   LcdDisplay* display = new LcdDisplay();
   #define DISPLAY_UPDATE_INTERVAL 5000  // 5 second for LCD
