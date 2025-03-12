@@ -17,7 +17,6 @@ void LcdDisplay::begin() {
     tft.setTextColor(TFT_WHITE);
     tft.setFreeFont(&FreeMonoBold12pt7b);
     tft.setTextSize(1);
-    Serial.println("LCD Display initialized");
 }
 
 void LcdDisplay::clear() {
