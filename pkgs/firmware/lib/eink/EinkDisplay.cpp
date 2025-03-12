@@ -5,7 +5,6 @@ void EinkDisplay::begin() {
   display.setRotation(1);
   display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
-  Serial.println("EINK Display initialized");
 }
 
 void EinkDisplay::clear() {
