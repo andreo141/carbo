@@ -14,7 +14,6 @@ void LcdDisplay::begin() {
     tft.begin();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_WHITE);
     tft.setFreeFont(&FreeMonoBold12pt7b);
     tft.setTextSize(1);
 }
@@ -36,11 +35,9 @@ void LcdDisplay::updateValues(uint16_t co2, float temperature, float humidity) {
         tft.fillRect(VALUE_X, FIRST_ROW_Y - textHeight + i * ROW_SPACING, VALUE_WIDTH, valueHeight, TFT_BLACK);
     }
 
-    if(co2){
     tft.setTextColor(getCO2Color(co2));
     tft.setCursor(VALUE_X, FIRST_ROW_Y);
-    tft.print(co2);    
-    }
+    tft.print(co2);
 
     tft.setTextColor(TFT_WHITE);
     tft.setCursor(VALUE_X, FIRST_ROW_Y + ROW_SPACING);
