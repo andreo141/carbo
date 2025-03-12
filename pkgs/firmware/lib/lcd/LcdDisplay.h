@@ -5,7 +5,7 @@
 
 
 class LcdDisplay {
-public:
+public:;
     void begin();
     void clear();
     void drawStaticContent();
@@ -18,7 +18,6 @@ public:
 private:
     TFT_eSPI tft;
     void drawLabel(const char* label, int16_t x, int16_t y);
-    void drawValue(const char* value, int16_t x, int16_t y);
 };
 
 #endif
