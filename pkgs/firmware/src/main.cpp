@@ -4,6 +4,8 @@
 #define EINK  1
 #define LCD   2
 SCD4x mySensor;
+#define EINK EINK
+#define LCD LCD
 
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
