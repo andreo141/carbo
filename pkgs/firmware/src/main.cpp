@@ -3,7 +3,6 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
-#include <AsyncJson.h>
 #include "SPIFFS.h"
 #include "SparkFun_SCD4x_Arduino_Library.h"
 #define EINK  1
