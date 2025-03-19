@@ -5,20 +5,21 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include "SPIFFS.h"
-#include "SparkFun_SCD4x_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD4x
+#include "SparkFun_SCD4x_Arduino_Library.h"
+#define EINK  1
+#define LCD   2
 SCD4x mySensor;
 #define EINK EINK
 #define LCD LCD
 
-// Include the appropriate display based on build flag
 #if DISPLAY_TYPE == EINK
-  #include "EinkDisplay.h"
-  EinkDisplay* display = new EinkDisplay();
-  #define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for eink
-#elif DISPLAY_TYPE == LCD
-  #include "LcdDisplay.h"
-  LcdDisplay* display = new LcdDisplay();
-  #define DISPLAY_UPDATE_INTERVAL 5000  // 5 second for LCD
+#include "EinkDisplay.h"
+EinkDisplay* display = new EinkDisplay();
+#define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for eink
+#else
+#include "LcdDisplay.h"
+LcdDisplay* display = new LcdDisplay();
+#define DISPLAY_UPDATE_INTERVAL 5000  // 5 seconds for LCD
 #endif
 
 uint16_t co2 = 0;
@@ -72,25 +73,15 @@ void setup() {
   });
   server.begin();
 
-  // mySensor.enableDebugging(); // Uncomment this line to get helpful debug messages on Serial
-  //.begin will start periodic measurements
-  if (mySensor.begin() == false)
-  {
+  if (mySensor.begin() == false) {
     Serial.println(F("Sensor not detected. Please check wiring. Freezing..."));
-    while (1)
-      ;
+    while (1);
   }
-  //The SCD4x has data ready every five seconds
 
-  // Initialize the display
   display->begin();
-
-  // Draw static content (labels)
   display->drawStaticContent();
-
   Serial.println("Setup complete!");
 }
-
 void loop() {
   if (mySensor.readMeasurement()) // readMeasurement will return true when fresh data is available
   {
