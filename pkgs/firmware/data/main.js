@@ -1,18 +1,42 @@
-async function refreshData(){
-  const response = await fetch("/data", {method: "GET"});
-  if(!response.ok){
-    console.log('error while fetching data');
-    return;
-  }
+const gateway = `ws://${window.location.hostname}/ws`;
+let websocket;
 
-  const {co2, humidity, temperature} = await response.json();
+// Init web socket when the page loads
+window.addEventListener("load", onload);
 
-  document.getElementById("co2").innerText = co2;
-  document.getElementById("temperature").innerText = temperature.toFixed(1);
-  document.getElementById("humidity").innerText = humidity.toFixed(0);
-
-  console.log(co2, humidity, temperature);
+function onload(event) {
+  initWebSocket();
 }
 
-refreshData();
-const interval = setInterval(refreshData, 5000);
+function getReadings() {
+  websocket.send("getReadings");
+}
+
+function initWebSocket() {
+  console.log("Trying to open a WebSocket connection…");
+  websocket = new WebSocket(gateway);
+  websocket.onopen = onOpen;
+  websocket.onclose = onClose;
+  websocket.onmessage = onMessage;
+}
+
+// When websocket is established, call the getReadings() function
+function onOpen(event) {
+  console.log("Connection opened");
+  getReadings();
+}
+
+function onClose(event) {
+  console.log("Connection closed");
+  setTimeout(initWebSocket, 2000);
+}
+
+// Function that receives the message from the ESP32 with the readings
+function onMessage(event) {
+  const myObj = JSON.parse(event.data);
+  const keys = Object.keys(myObj);
+  for (var i = 0; i < keys.length; i++) {
+    let key = keys[i];
+    document.getElementById(key).innerHTML = myObj[key];
+  }
+}

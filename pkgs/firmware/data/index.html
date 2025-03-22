@@ -1,28 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>carbo</title>
-</head>
-
-<body>
-  <h1>carbo</h1>
-  <div>
-    <p>CO2: <span id="co2"></span> ppm</p>
-    <p>Temperature: <span id="temperature"></span> ℃</p>
-    <p>Humidity: <span id="humidity"></span> %</p>
-  </div>
-
-  <script src="main.js"></script>
-</body>
-
+<html>
+  <head>
+    <title>carbo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <div class="topnav">
+      <h1>carbo</h1>
+    </div>
+    <div class="content">
+      <div class="card-grid">
+        <div class="card">
+          <p class="card-title">
+            <i
+              class="fas fa-thermometer-threequarters"
+              style="color: #059e8a"
+            ></i>
+            CO2
+          </p>
+          <p class="reading"><span id="co2"></span> ppm</p>
+        </div>
+        <div class="card">
+          <p class="card-title">Temperature</p>
+          <p class="reading"><span id="temperature"></span> &deg;C</p>
+        </div>
+        <div class="card">
+          <p class="card-title">Humidity</p>
+          <p class="reading"><span id="humidity"></span> &percnt;</p>
+        </div>
+      </div>
+    </div>
+    <script src="main.js"></script>
+  </body>
 </html>
-<style>
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-</style>
