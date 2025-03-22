@@ -1,5 +1,4 @@
 const gateway = `ws://${window.location.hostname}/ws`;
-
 // Init web socket when the page loads
 window.addEventListener("load", onload);
 
