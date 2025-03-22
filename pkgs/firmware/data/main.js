@@ -1,4 +1,6 @@
 const gateway = `ws://${window.location.hostname}/ws`;
+let websocket;
+
 // Init web socket when the page loads
 window.addEventListener("load", onload);
 
@@ -12,7 +14,7 @@ function getReadings() {
 
 function initWebSocket() {
   console.log("Trying to open a WebSocket connection…");
-  const websocket = new WebSocket(gateway);
+  websocket = new WebSocket(gateway);
   websocket.onopen = onOpen;
   websocket.onclose = onClose;
   websocket.onmessage = onMessage;
