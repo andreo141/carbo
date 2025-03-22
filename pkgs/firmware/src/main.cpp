@@ -47,7 +47,7 @@ String getSensorReadings() {
   readings["co2"] = String(co2);
   readings["humidity"] = String(humidity);
   readings["temperature"] = String(temperature);
-  serializeJson(data, response);
+  serializeJson(readings, response);
   return response;
 }
 
