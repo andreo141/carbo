@@ -55,15 +55,9 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo *)arg;
   if (info->final && info->index == 0 && info->len == len &&
       info->opcode == WS_TEXT) {
-    // data[len] = 0;
-    // String message = (char*)data;
-    //  Check if the message is "getReadings"
-    // if (strcmp((char*)data, "getReadings") == 0) {
-    // if it is, send current sensor readings
     String sensorReadings = getSensorReadings();
     Serial.print(sensorReadings);
     notifyClients(sensorReadings);
-    //}
   }
 }
 
@@ -101,23 +95,6 @@ void initSPIFFS() {
   }
 }
 
-void listSPIFFSFiles() {
-  Serial.println("Listing SPIFFS files...");
-  File root = SPIFFS.open("/");
-  if (!root) {
-    Serial.println("Failed to open SPIFFS root");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    Serial.print("File found: ");
-    Serial.println(file.name());
-    file = root.openNextFile();
-  }
-  Serial.println("SPIFFS file listing complete.");
-}
-
 void initWifi() {
   // Setup wifi
   WiFi.begin(ssid, password);
@@ -136,7 +113,6 @@ void setup() {
   Wire.begin();
   initWifi();
   initSPIFFS();
-  listSPIFFSFiles();
   initWebSocket();
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
