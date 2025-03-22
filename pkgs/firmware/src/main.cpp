@@ -41,12 +41,12 @@ AsyncWebSocket ws("/ws");
 void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
 
 String getSensorReadings() {
-  StaticJsonDocument<200> data;
+  StaticJsonDocument<200> readings;
   String response;
 
-  data["co2"] = co2;
-  data["humidity"] = humidity;
-  data["temperature"] = temperature;
+  readings["co2"] = String(co2);
+  readings["humidity"] = String(humidity);
+  readings["temperature"] = String(temperature);
   serializeJson(data, response);
   return response;
 }
