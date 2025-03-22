@@ -1,5 +1,5 @@
-var gateway = `ws://${window.location.hostname}/ws`;
-var websocket;
+const gateway = `ws://${window.location.hostname}/ws`;
+
 // Init web socket when the page loads
 window.addEventListener("load", onload);
 
@@ -13,7 +13,7 @@ function getReadings() {
 
 function initWebSocket() {
   console.log("Trying to open a WebSocket connection…");
-  websocket = new WebSocket(gateway);
+  const websocket = new WebSocket(gateway);
   websocket.onopen = onOpen;
   websocket.onclose = onClose;
   websocket.onmessage = onMessage;
@@ -32,10 +32,10 @@ function onClose(event) {
 
 // Function that receives the message from the ESP32 with the readings
 function onMessage(event) {
-  var myObj = JSON.parse(event.data);
-  var keys = Object.keys(myObj);
+  const myObj = JSON.parse(event.data);
+  const keys = Object.keys(myObj);
   for (var i = 0; i < keys.length; i++) {
-    var key = keys[i];
+    let key = keys[i];
     document.getElementById(key).innerHTML = myObj[key];
   }
 }
