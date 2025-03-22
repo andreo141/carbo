@@ -47,7 +47,6 @@ String getSensorReadings() {
   data["co2"] = co2;
   data["humidity"] = humidity;
   data["temperature"] = temperature;
-
   serializeJson(data, response);
   return response;
 }
@@ -102,6 +101,23 @@ void initSPIFFS() {
   }
 }
 
+void listSPIFFSFiles() {
+  Serial.println("Listing SPIFFS files...");
+  File root = SPIFFS.open("/");
+  if (!root) {
+    Serial.println("Failed to open SPIFFS root");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    Serial.print("File found: ");
+    Serial.println(file.name());
+    file = root.openNextFile();
+  }
+  Serial.println("SPIFFS file listing complete.");
+}
+
 void initWifi() {
   // Setup wifi
   WiFi.begin(ssid, password);
@@ -120,14 +136,14 @@ void setup() {
   Wire.begin();
   initWifi();
   initSPIFFS();
+  listSPIFFSFiles();
   initWebSocket();
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
-  server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/main.js", "text/javascript");
-  });
+
+  server.serveStatic("/", SPIFFS, "/");
 
   server.begin();
 
