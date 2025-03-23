@@ -1,5 +1,6 @@
 const gateway = `ws://${window.location.hostname}/ws`;
 let websocket;
+let chartInstance = null;
 
 // Init web socket when the page loads
 window.addEventListener("load", onload);
@@ -34,9 +35,42 @@ function onClose(event) {
 // Function that receives the message from the ESP32 with the readings
 function onMessage(event) {
   const myObj = JSON.parse(event.data);
-  const keys = Object.keys(myObj);
-  for (var i = 0; i < keys.length; i++) {
-    let key = keys[i];
-    document.getElementById(key).innerHTML = myObj[key];
-  }
+  const values = myObj.data;
+    console.log("history data:", values);
+
+    if (values && Array.isArray(values)) {
+      updateChart(values); // Pass only the array
+    } else {
+      console.error("Invalid data format:", myObj);
+    }
+
+    const latestValues = values[values.length - 1];
+    document.getElementById("co2").innerHTML = latestValues.co2;
+    document.getElementById("temperature").innerHTML = latestValues.temp;
+    document.getElementById("humidity").innerHTML = latestValues.humidity;
+    console.log('latest values:', latestValues);
 }
+
+function updateChart(data) {
+  const labels = data.map(entry => new Date(entry.timestamp).toLocaleTimeString());
+  const co2Values = data.map(entry => entry.co2);
+
+  const ctx = document.getElementById("historyChart").getContext("2d");
+
+  // Destroy existing chart if it exists
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  // Create a new chart instance
+  chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        { label: "CO2", data: co2Values, borderColor: "red" },
+      ]
+    }
+  });
+}
+

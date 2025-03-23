@@ -11,6 +11,9 @@
 #define LCD 2
 SCD4x mySensor;
 
+// TODO: find ideal value
+#define MAX_READINGS 1440 // 1 reading per minute * 60 minutes * 24 hours = 1440
+
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
 EinkDisplay *display = new EinkDisplay();
@@ -25,6 +28,16 @@ uint16_t co2 = 0;
 float temperature = 0.0f;
 float humidity = 0.0f;
 
+struct SensorReading {
+  uint16_t co2;
+  float temperature;
+  float humidity;
+  unsigned long timestamp;
+};
+
+SensorReading dataBuffer[MAX_READINGS];
+int readingIndex = 0;
+
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
@@ -33,6 +46,30 @@ static AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
+
+void sendHistory() {
+  StaticJsonDocument<5000> readings;
+  JsonArray dataArray = readings.createNestedArray("data");
+
+  for (int i = 0; i < MAX_READINGS; i++) {
+    int idx = (readingIndex + i) % MAX_READINGS; // Current entry
+    if (dataBuffer[idx].timestamp == 0)
+      continue; // Skip empty entries
+
+    JsonObject entry =
+        dataArray.createNestedObject(); // Use a different variable
+    entry["timestamp"] = dataBuffer[idx].timestamp;
+    entry["co2"] = dataBuffer[idx].co2;
+    entry["temp"] = dataBuffer[idx].temperature;
+    entry["humidity"] = dataBuffer[idx].humidity;
+  }
+
+  String historyResponse;
+  serializeJson(readings, historyResponse);
+
+  Serial.println("sending history:");
+  notifyClients(historyResponse);
+}
 
 String getSensorReadings() {
   StaticJsonDocument<200> readings;
@@ -43,6 +80,11 @@ String getSensorReadings() {
   readings["temperature"] = String(temperature);
   serializeJson(readings, response);
   return response;
+}
+
+void storeSensorData(uint16_t co2, float temp, float humidity) {
+  dataBuffer[readingIndex] = {co2, temp, humidity, millis()};
+  readingIndex = (readingIndex + 1) % MAX_READINGS; // Overwrite oldest data
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
@@ -139,6 +181,9 @@ void loop() {
       temperature = mySensor.getTemperature();
       humidity = mySensor.getHumidity();
 
+      // Store sensor data in buffer
+      storeSensorData(co2, temperature, humidity);
+
       Serial.print("CO2: ");
       Serial.print(co2);
       Serial.println(" ppm");
@@ -153,8 +198,11 @@ void loop() {
       display->updateValues(co2, temperature, humidity);
 
       // Send data via WebSocket
-      String sensorReadings = getSensorReadings();
-      notifyClients(sensorReadings);
+      // String sensorReadings = getSensorReadings();
+      // notifyClients(sensorReadings);
+      sendHistory();
+    } else {
+      Serial.print(".");
     }
   }
 
