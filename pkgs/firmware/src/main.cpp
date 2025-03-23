@@ -10,12 +10,6 @@
 #define EINK 1
 #define LCD 2
 SCD4x mySensor;
-#define EINK EINK
-#define LCD LCD
-
-// Timer variables
-unsigned long lastTime = 0;
-unsigned long timerDelay = 30000;
 
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
