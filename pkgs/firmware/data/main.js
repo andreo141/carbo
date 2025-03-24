@@ -21,10 +21,11 @@ function initWebSocket() {
   websocket.onmessage = onMessage;
 }
 
+// TODO: figure out what to do with this, see main.cpp as well
 // When websocket is established, call the getReadings() function
 function onOpen(event) {
   console.log("Connection opened");
-  getReadings();
+  // getReadings();
 }
 
 function onClose(event) {
@@ -34,26 +35,29 @@ function onClose(event) {
 
 // Function that receives the message from the ESP32 with the readings
 function onMessage(event) {
-  const myObj = JSON.parse(event.data);
-  const values = myObj.data;
-    console.log("history data:", values);
+  const msg = JSON.parse(event.data);
+  console.log("received message from server:", msg);
 
-    if (values && Array.isArray(values)) {
-      updateChart(values); // Pass only the array
-    } else {
-      console.error("Invalid data format:", myObj);
-    }
-
-    const latestValues = values[values.length - 1];
-    document.getElementById("co2").innerHTML = latestValues.co2;
-    document.getElementById("temperature").innerHTML = latestValues.temp;
-    document.getElementById("humidity").innerHTML = latestValues.humidity;
-    console.log('latest values:', latestValues);
+  switch (msg.type) {
+    case "history":
+      console.log('RECEIVED HISTORYYYYY');
+      updateChart(msg.data);
+      break;
+    case "latest_reading":
+      const latestReading = msg.data;
+      document.getElementById("co2").innerHTML = latestReading.co2;
+      document.getElementById("temperature").innerHTML = latestReading.temperature;
+      document.getElementById("humidity").innerHTML = latestReading.humidity;
+      break;
+  }
 }
 
+
 function updateChart(data) {
-  const labels = data.map(entry => new Date(entry.timestamp).toLocaleTimeString());
-  const co2Values = data.map(entry => entry.co2);
+  const labels = data.map((entry) =>
+    new Date(entry.timestamp).toLocaleTimeString()
+  );
+  const co2Values = data.map((entry) => entry.co2);
 
   const ctx = document.getElementById("historyChart").getContext("2d");
 
@@ -67,10 +71,7 @@ function updateChart(data) {
     type: "line",
     data: {
       labels: labels,
-      datasets: [
-        { label: "CO2", data: co2Values, borderColor: "red" },
-      ]
-    }
+      datasets: [{ label: "CO2", data: co2Values, borderColor: "red" }],
+    },
   });
 }
-
