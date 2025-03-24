@@ -45,41 +45,48 @@ static AsyncWebServer server(80);
 
 AsyncWebSocket ws("/ws");
 
-void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
+void notifyClients(String message) { ws.textAll(message); }
 
 void sendHistory() {
-  StaticJsonDocument<5000> readings;
-  JsonArray dataArray = readings.createNestedArray("data");
+  JsonDocument msg;
+  msg["type"] = "history";
+  JsonArray data = msg.createNestedArray("data");
 
   for (int i = 0; i < MAX_READINGS; i++) {
     int idx = (readingIndex + i) % MAX_READINGS; // Current entry
     if (dataBuffer[idx].timestamp == 0)
       continue; // Skip empty entries
 
-    JsonObject entry =
-        dataArray.createNestedObject(); // Use a different variable
-    entry["timestamp"] = dataBuffer[idx].timestamp;
-    entry["co2"] = dataBuffer[idx].co2;
-    entry["temp"] = dataBuffer[idx].temperature;
-    entry["humidity"] = dataBuffer[idx].humidity;
+    JsonObject reading = data.createNestedObject();
+    reading["timestamp"] = dataBuffer[idx].timestamp;
+    reading["co2"] = dataBuffer[idx].co2;
+    reading["temp"] = dataBuffer[idx].temperature;
+    reading["humidity"] = dataBuffer[idx].humidity;
   }
 
-  String historyResponse;
-  serializeJson(readings, historyResponse);
+  String output;
+  serializeJson(msg, output);
 
   Serial.println("sending history:");
-  notifyClients(historyResponse);
+  Serial.println(output);
+  notifyClients(output);
 }
 
-String getSensorReadings() {
-  StaticJsonDocument<200> readings;
-  String response;
+void sendLatestReading() {
+  JsonDocument msg;
+  msg["type"] = "latest_reading";
+  JsonObject data = msg.createNestedObject("data");
 
-  readings["co2"] = String(co2);
-  readings["humidity"] = String(humidity);
-  readings["temperature"] = String(temperature);
-  serializeJson(readings, response);
-  return response;
+  data["co2"] = String(co2);
+  data["humidity"] = String(humidity);
+  data["temperature"] = String(temperature);
+
+  String output;
+  serializeJson(msg, output);
+
+  Serial.println("sending latest reading:");
+  Serial.println(output);
+  notifyClients(output);
 }
 
 void storeSensorData(uint16_t co2, float temp, float humidity) {
@@ -87,15 +94,19 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
   readingIndex = (readingIndex + 1) % MAX_READINGS; // Overwrite oldest data
 }
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-  AwsFrameInfo *info = (AwsFrameInfo *)arg;
-  if (info->final && info->index == 0 && info->len == len &&
-      info->opcode == WS_TEXT) {
-    String sensorReadings = getSensorReadings();
-    Serial.print(sensorReadings);
-    notifyClients(sensorReadings);
-  }
-}
+// Only needed if we want the client to send messages back, or ask for data
+// In this case it sends the latest reading by default
+// TODO: refactor because now it kinda sucks
+// for example: let the client distinguish what data it wants
+// Only send to the client that requested the data, not to everyone
+// void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+//   AwsFrameInfo *info = (AwsFrameInfo *)arg;
+//   if (info->final && info->index == 0 && info->len == len &&
+//       info->opcode == WS_TEXT) {
+//     Serial.println("received WS message from client, sending latest
+//     reading"); sendLatestReading();
+//   }
+// }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
              AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -107,9 +118,9 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
     break;
-  case WS_EVT_DATA:
-    handleWebSocketMessage(arg, data, len);
-    break;
+  // case WS_EVT_DATA:
+  //   handleWebSocketMessage(arg, data, len);
+  //   break;
   case WS_EVT_PONG:
   case WS_EVT_ERROR:
     break;
@@ -170,6 +181,7 @@ void setup() {
   Serial.println("Setup complete!");
 }
 
+static unsigned long lastHistoryUpdate = millis();
 void loop() {
   static unsigned long lastDisplayUpdate = 0;
 
@@ -198,9 +210,13 @@ void loop() {
       display->updateValues(co2, temperature, humidity);
 
       // Send data via WebSocket
-      // String sensorReadings = getSensorReadings();
-      // notifyClients(sensorReadings);
-      sendHistory();
+      sendLatestReading();
+
+      // Send history every 15s for now
+      if (millis() - lastHistoryUpdate >= 15000) {
+        lastHistoryUpdate = millis();
+        sendHistory();
+      }
     } else {
       Serial.print(".");
     }
