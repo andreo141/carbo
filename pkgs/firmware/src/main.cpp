@@ -39,7 +39,7 @@ SensorReading dataBuffer[MAX_READINGS];
 int readingIndex = 0;
 
 // Variables used to calculate the average of the last x minutes, and create aggregate readings
-float totalCO2 = 0;
+uint16_t totalCO2 = 0;
 float totalTemperature = 0;
 float totalHumidity = 0;
 uint16_t currentPeriodCount = 0;
@@ -106,7 +106,7 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
     if (currentPeriodCount > 0) {
       // Calculate averages
       dataBuffer[readingIndex] = {
-        totalCO2 / currentPeriodCount,
+        static_cast<uint16_t>(totalCO2 / currentPeriodCount),
         totalTemperature / currentPeriodCount,
         totalHumidity / currentPeriodCount,
         time(nullptr)
