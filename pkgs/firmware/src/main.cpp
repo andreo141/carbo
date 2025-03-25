@@ -60,7 +60,7 @@ void sendHistory() {
     JsonObject reading = data.createNestedObject();
     reading["timestamp"] = dataBuffer[idx].timestamp;
     reading["co2"] = dataBuffer[idx].co2;
-    reading["temp"] = dataBuffer[idx].temperature;
+    reading["temperature"] = dataBuffer[idx].temperature;
     reading["humidity"] = dataBuffer[idx].humidity;
   }
 
