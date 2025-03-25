@@ -147,6 +147,9 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
   case WS_EVT_CONNECT:
     Serial.printf("WebSocket client #%u connected from %s\n", client->id(),
                   client->remoteIP().toString().c_str());
+    // Send latest_reading and history on client connect
+    sendLatestReading();
+    sendHistory();
     break;
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
