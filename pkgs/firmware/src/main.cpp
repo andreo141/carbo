@@ -38,6 +38,13 @@ struct SensorReading {
 SensorReading dataBuffer[MAX_READINGS];
 int readingIndex = 0;
 
+// Variables used to calculate the average of the last x minutes, and create aggregate readings
+float totalCO2 = 0;
+float totalTemperature = 0;
+float totalHumidity = 0;
+uint16_t currentPeriodCount = 0;
+unsigned long lastAggregationTime = 0;
+
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
@@ -68,7 +75,6 @@ void sendHistory() {
   serializeJson(msg, output);
 
   Serial.println("sending history:");
-  Serial.println(output);
   notifyClients(output);
 }
 
@@ -85,13 +91,40 @@ void sendLatestReading() {
   serializeJson(msg, output);
 
   Serial.println("sending latest reading:");
-  Serial.println(output);
   notifyClients(output);
 }
 
 void storeSensorData(uint16_t co2, float temp, float humidity) {
-  dataBuffer[readingIndex] = {co2, temp, humidity, millis()};
-  readingIndex = (readingIndex + 1) % MAX_READINGS; // Overwrite oldest data
+  // Accumulate readings
+  totalCO2 += co2;
+  totalTemperature += temperature;
+  totalHumidity += humidity;
+  currentPeriodCount++;
+
+  // every x minutes, calculate and process the avg
+  if (millis() - lastAggregationTime >= 1 * 60 * 1000) {
+    if (currentPeriodCount > 0) {
+      // Calculate averages
+      dataBuffer[readingIndex] = {
+        totalCO2 / currentPeriodCount,
+        totalTemperature / currentPeriodCount,
+        totalHumidity / currentPeriodCount,
+        time(nullptr)
+      };
+
+      // Move to next index, wrap around if needed
+      readingIndex = (readingIndex + 1) % MAX_READINGS;
+
+      // Reset aggregation variables
+      totalCO2 = 0;
+      totalTemperature = 0;
+      totalHumidity = 0;
+      currentPeriodCount = 0;
+    }
+
+    // Update last aggregation time
+    lastAggregationTime = millis();
+  }
 }
 
 // Only needed if we want the client to send messages back, or ask for data
@@ -219,8 +252,8 @@ void loop() {
       // Send data via WebSocket
       sendLatestReading();
 
-      // Send history every 15s for now
-      if (millis() - lastHistoryUpdate >= 15000) {
+      // Send history every 60s for now
+      if (millis() - lastHistoryUpdate >= 60000) {
         lastHistoryUpdate = millis();
         sendHistory();
       }
