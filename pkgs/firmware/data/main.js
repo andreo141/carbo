@@ -55,7 +55,7 @@ function onMessage(event) {
 
 function updateChart(data) {
   const labels = data.map((entry) =>
-    new Date(entry.timestamp).toLocaleTimeString()
+    new Date(entry.timestamp * 1000).toLocaleTimeString()
   );
   const co2Values = data.map((entry) => entry.co2);
 

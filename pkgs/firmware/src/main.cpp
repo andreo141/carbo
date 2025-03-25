@@ -32,7 +32,7 @@ struct SensorReading {
   uint16_t co2;
   float temperature;
   float humidity;
-  unsigned long timestamp;
+  time_t timestamp;
 };
 
 SensorReading dataBuffer[MAX_READINGS];
@@ -155,10 +155,17 @@ void initWifi() {
   }
 }
 
+void syncWithNTP() {
+  if (WiFi.status() == WL_CONNECTED) {
+    configTime(0, 0, "pool.ntp.org");
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   Wire.begin();
   initWifi();
+  syncWithNTP(); // Needed to have accurate timestamps available
   initSPIFFS();
   initWebSocket();
 
