@@ -3,14 +3,17 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
+#include <InfluxDBHandler.h>
 #include <Secrets.h>
+#include <SetupHelpers.h>
 #include <WiFi.h>
 #include <Wire.h>
 
-#define EINK 1
-#define LCD 2
 SCD4x mySensor;
 
+// Screen definitions
+#define EINK 1
+#define LCD 2
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
 EinkDisplay *display = new EinkDisplay();
@@ -25,42 +28,34 @@ uint16_t co2 = 0;
 float temperature = 0.0f;
 float humidity = 0.0f;
 
-const char *ssid = WIFI_SSID;
-const char *password = WIFI_PASSWORD;
-
-static AsyncWebServer server(80);
-
+AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
-
 String getSensorReadings() {
-  StaticJsonDocument<200> readings;
+  JsonDocument readings;
   String response;
 
-  readings["co2"] = String(co2);
-  readings["humidity"] = String(humidity);
-  readings["temperature"] = String(temperature);
+  readings["co2"] = co2;
+  readings["humidity"] = humidity;
+  readings["temperature"] = temperature;
   serializeJson(readings, response);
   return response;
 }
+void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo *)arg;
-  if (info->final && info->index == 0 && info->len == len &&
-      info->opcode == WS_TEXT) {
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     String sensorReadings = getSensorReadings();
     Serial.print(sensorReadings);
-    notifyClients(sensorReadings);
+    ws.textAll(sensorReadings);
   }
 }
 
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
-             AwsEventType type, void *arg, uint8_t *data, size_t len) {
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   switch (type) {
   case WS_EVT_CONNECT:
-    Serial.printf("WebSocket client #%u connected from %s\n", client->id(),
-                  client->remoteIP().toString().c_str());
+    Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
     break;
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -79,42 +74,22 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-void initSPIFFS() {
-  // Setup SPIFFS (file storage)
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  } else {
-    Serial.println("SPIFFS set up complete");
-  }
-}
-
-void initWifi() {
-  // Setup wifi
-  WiFi.begin(ssid, password);
-  int result = WiFi.waitForConnectResult();
-  if (result == WL_CONNECTED) {
-    Serial.println("");
-    Serial.print("Wifi connected, IP address:");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.print("Wifi not connected!");
-  }
-}
-
 void setup() {
   Serial.begin(115200);
   Wire.begin();
   initWifi();
   initSPIFFS();
   initWebSocket();
+  testDBConnection();
+  setupInfluxDB();
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/index.html", "text/html");
-  });
+  // Accurate time is necessary for certificate validation and writing in batches
+  // We use the NTP servers in your area as provided by: https://www.pool.ntp.org/zone/
+  // Syncing progress and the time will be printed to Serial.
+  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/index.html", "text/html"); });
   server.serveStatic("/", SPIFFS, "/");
-
   server.begin();
 
   if (mySensor.begin() == false) {
@@ -151,6 +126,7 @@ void loop() {
       Serial.println();
 
       display->updateValues(co2, temperature, humidity);
+      sendReadingToInfluxDB();
 
       // Send data via WebSocket
       String sensorReadings = getSensorReadings();
