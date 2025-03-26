@@ -12,7 +12,7 @@
 SCD4x mySensor;
 
 // TODO: find ideal value
-#define MAX_READINGS 1440 // 1 reading per minute * 60 minutes * 24 hours = 1440
+#define MAX_READINGS 288 // 1 reading per 5 minute or 12 readings per hour: 12 * 24 hours = 288
 
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
@@ -31,7 +31,6 @@ float humidity = 0.0f;
 struct SensorReading {
   uint16_t co2;
   float temperature;
-  float humidity;
   time_t timestamp;
 };
 
@@ -41,7 +40,6 @@ int readingIndex = 0;
 // Variables used to calculate the average of the last x minutes, and create aggregate readings
 uint16_t totalCO2 = 0;
 float totalTemperature = 0;
-float totalHumidity = 0;
 uint16_t currentPeriodCount = 0;
 unsigned long lastAggregationTime = 0;
 
@@ -68,7 +66,6 @@ void sendHistory() {
     reading["timestamp"] = dataBuffer[idx].timestamp;
     reading["co2"] = dataBuffer[idx].co2;
     reading["temperature"] = dataBuffer[idx].temperature;
-    reading["humidity"] = dataBuffer[idx].humidity;
   }
 
   String output;
@@ -98,17 +95,15 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
   // Accumulate readings
   totalCO2 += co2;
   totalTemperature += temperature;
-  totalHumidity += humidity;
   currentPeriodCount++;
 
   // every x minutes, calculate and process the avg
-  if (millis() - lastAggregationTime >= 1 * 60 * 1000) {
+  if (millis() - lastAggregationTime >= 5 * 60 * 1000) {
     if (currentPeriodCount > 0) {
       // Calculate averages
       dataBuffer[readingIndex] = {
         static_cast<uint16_t>(totalCO2 / currentPeriodCount),
         totalTemperature / currentPeriodCount,
-        totalHumidity / currentPeriodCount,
         time(nullptr)
       };
 
@@ -118,7 +113,6 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
       // Reset aggregation variables
       totalCO2 = 0;
       totalTemperature = 0;
-      totalHumidity = 0;
       currentPeriodCount = 0;
     }
 
@@ -255,8 +249,8 @@ void loop() {
       // Send data via WebSocket
       sendLatestReading();
 
-      // Send history every 60s for now
-      if (millis() - lastHistoryUpdate >= 60000) {
+      // Send history every 5m for now
+      if (millis() - lastHistoryUpdate >= 5 * 60 * 1000) {
         lastHistoryUpdate = millis();
         sendHistory();
       }
