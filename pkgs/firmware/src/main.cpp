@@ -80,9 +80,9 @@ void sendLatestReading() {
   msg["type"] = "latest_reading";
   JsonObject data = msg.createNestedObject("data");
 
-  data["co2"] = String(co2);
-  data["humidity"] = String(humidity);
-  data["temperature"] = String(temperature);
+  data["co2"] = co2;
+  data["humidity"] = humidity;
+  data["temperature"] = temperature;
 
   String output;
   serializeJson(msg, output);
