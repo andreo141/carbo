@@ -11,6 +11,9 @@
 #define LCD 2
 SCD4x mySensor;
 
+// TODO: find ideal value
+#define MAX_READINGS 288 // 1 reading per 5 minute or 12 readings per hour: 12 * 24 hours = 288
+
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
 EinkDisplay *display = new EinkDisplay();
@@ -25,6 +28,21 @@ uint16_t co2 = 0;
 float temperature = 0.0f;
 float humidity = 0.0f;
 
+struct SensorReading {
+  uint16_t co2;
+  float temperature;
+  time_t timestamp;
+};
+
+SensorReading dataBuffer[MAX_READINGS];
+int readingIndex = 0;
+
+// Variables used to calculate the average of the last x minutes, and create aggregate readings
+uint16_t totalCO2 = 0;
+float totalTemperature = 0;
+uint16_t currentPeriodCount = 0;
+unsigned long lastAggregationTime = 0;
+
 const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
@@ -32,28 +50,90 @@ static AsyncWebServer server(80);
 
 AsyncWebSocket ws("/ws");
 
-void notifyClients(String sensorReadings) { ws.textAll(sensorReadings); }
+void notifyClients(String message) { ws.textAll(message); }
 
-String getSensorReadings() {
-  StaticJsonDocument<200> readings;
-  String response;
+void sendHistory() {
+  JsonDocument msg;
+  msg["type"] = "history";
+  JsonArray data = msg.createNestedArray("data");
 
-  readings["co2"] = String(co2);
-  readings["humidity"] = String(humidity);
-  readings["temperature"] = String(temperature);
-  serializeJson(readings, response);
-  return response;
+  for (int i = 0; i < MAX_READINGS; i++) {
+    int idx = (readingIndex + i) % MAX_READINGS; // Current entry
+    if (dataBuffer[idx].timestamp == 0)
+      continue; // Skip empty entries
+
+    JsonObject reading = data.createNestedObject();
+    reading["timestamp"] = dataBuffer[idx].timestamp;
+    reading["co2"] = dataBuffer[idx].co2;
+    reading["temperature"] = dataBuffer[idx].temperature;
+  }
+
+  String output;
+  serializeJson(msg, output);
+
+  Serial.println("sending history:");
+  notifyClients(output);
 }
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-  AwsFrameInfo *info = (AwsFrameInfo *)arg;
-  if (info->final && info->index == 0 && info->len == len &&
-      info->opcode == WS_TEXT) {
-    String sensorReadings = getSensorReadings();
-    Serial.print(sensorReadings);
-    notifyClients(sensorReadings);
+void sendLatestReading() {
+  JsonDocument msg;
+  msg["type"] = "latest_reading";
+  JsonObject data = msg.createNestedObject("data");
+
+  data["co2"] = String(co2);
+  data["humidity"] = String(humidity);
+  data["temperature"] = String(temperature);
+
+  String output;
+  serializeJson(msg, output);
+
+  Serial.println("sending latest reading:");
+  notifyClients(output);
+}
+
+void storeSensorData(uint16_t co2, float temp, float humidity) {
+  // Accumulate readings
+  totalCO2 += co2;
+  totalTemperature += temperature;
+  currentPeriodCount++;
+
+  // every x minutes, calculate and process the avg
+  if (millis() - lastAggregationTime >= 5 * 60 * 1000) {
+    if (currentPeriodCount > 0) {
+      // Calculate averages
+      dataBuffer[readingIndex] = {
+        static_cast<uint16_t>(totalCO2 / currentPeriodCount),
+        totalTemperature / currentPeriodCount,
+        time(nullptr)
+      };
+
+      // Move to next index, wrap around if needed
+      readingIndex = (readingIndex + 1) % MAX_READINGS;
+
+      // Reset aggregation variables
+      totalCO2 = 0;
+      totalTemperature = 0;
+      currentPeriodCount = 0;
+    }
+
+    // Update last aggregation time
+    lastAggregationTime = millis();
   }
 }
+
+// Only needed if we want the client to send messages back, or ask for data
+// In this case it sends the latest reading by default
+// TODO: refactor because now it kinda sucks
+// for example: let the client distinguish what data it wants
+// Only send to the client that requested the data, not to everyone
+// void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+//   AwsFrameInfo *info = (AwsFrameInfo *)arg;
+//   if (info->final && info->index == 0 && info->len == len &&
+//       info->opcode == WS_TEXT) {
+//     Serial.println("received WS message from client, sending latest
+//     reading"); sendLatestReading();
+//   }
+// }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
              AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -61,13 +141,16 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
   case WS_EVT_CONNECT:
     Serial.printf("WebSocket client #%u connected from %s\n", client->id(),
                   client->remoteIP().toString().c_str());
+    // Send latest_reading and history on client connect
+    sendLatestReading();
+    sendHistory();
     break;
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
     break;
-  case WS_EVT_DATA:
-    handleWebSocketMessage(arg, data, len);
-    break;
+  // case WS_EVT_DATA:
+  //   handleWebSocketMessage(arg, data, len);
+  //   break;
   case WS_EVT_PONG:
   case WS_EVT_ERROR:
     break;
@@ -102,10 +185,17 @@ void initWifi() {
   }
 }
 
+void syncWithNTP() {
+  if (WiFi.status() == WL_CONNECTED) {
+    configTime(0, 0, "pool.ntp.org");
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   Wire.begin();
   initWifi();
+  syncWithNTP(); // Needed to have accurate timestamps available
   initSPIFFS();
   initWebSocket();
 
@@ -128,6 +218,7 @@ void setup() {
   Serial.println("Setup complete!");
 }
 
+static unsigned long lastHistoryUpdate = millis();
 void loop() {
   static unsigned long lastDisplayUpdate = 0;
 
@@ -138,6 +229,9 @@ void loop() {
       co2 = mySensor.getCO2();
       temperature = mySensor.getTemperature();
       humidity = mySensor.getHumidity();
+
+      // Store sensor data in buffer
+      storeSensorData(co2, temperature, humidity);
 
       Serial.print("CO2: ");
       Serial.print(co2);
@@ -153,8 +247,15 @@ void loop() {
       display->updateValues(co2, temperature, humidity);
 
       // Send data via WebSocket
-      String sensorReadings = getSensorReadings();
-      notifyClients(sensorReadings);
+      sendLatestReading();
+
+      // Send history every 5m for now
+      if (millis() - lastHistoryUpdate >= 5 * 60 * 1000) {
+        lastHistoryUpdate = millis();
+        sendHistory();
+      }
+    } else {
+      Serial.print(".");
     }
   }
 
