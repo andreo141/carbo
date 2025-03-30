@@ -1,3 +1,4 @@
+#include "HTTPClient.h"
 #include "SPIFFS.h"
 #include "SparkFun_SCD4x_Arduino_Library.h"
 #include <Arduino.h>
@@ -27,6 +28,7 @@ LcdDisplay *display = new LcdDisplay();
 uint16_t co2 = 0;
 float temperature = 0.0f;
 uint16_t humidity = 0;
+time_t timestamp;
 
 struct SensorReading {
   uint16_t co2;
@@ -45,10 +47,21 @@ const char *ssid = WIFI_SSID;
 const char *password = WIFI_PASSWORD;
 
 static AsyncWebServer server(80);
-
 AsyncWebSocket ws("/ws");
 
 void notifyClients(String message) { ws.textAll(message); }
+
+void sendToBackend(String jsonString, String url) {
+  HTTPClient http;
+
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+
+  int httpResponseCode = http.POST(jsonString);
+  Serial.println("sending to backend:");
+  Serial.println(httpResponseCode);
+  http.end();
+}
 
 void sendHistory() {
   JsonDocument msg;
@@ -80,12 +93,17 @@ void sendLatestReading() {
   data["co2"] = co2;
   data["humidity"] = humidity;
   data["temperature"] = temperature;
+  data["timestamp"] = timestamp;
 
   String output;
   serializeJson(msg, output);
 
   Serial.println("sending latest reading:");
+  // Send via WebSocket to client
   notifyClients(output);
+
+  // Send via REST to backend
+  sendToBackend(output, String(BACKEND_URL) + "/latestReading");
 }
 
 void storeSensorData(uint16_t co2) {
@@ -223,6 +241,7 @@ void loop() {
       co2 = mySensor.getCO2();
       temperature = mySensor.getTemperature();
       humidity = static_cast<uint16_t>(mySensor.getHumidity());
+      timestamp = time(nullptr);
 
       // Store sensor data in buffer
       storeSensorData(co2);
