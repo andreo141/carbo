@@ -31,7 +31,7 @@ void LcdDisplay::drawStaticContent() {
   drawLabel("Humid [%]:", LABEL_X, FIRST_ROW_Y + 2 * ROW_SPACING);
 }
 
-void LcdDisplay::updateValues(uint16_t co2, float temperature, float humidity) {
+void LcdDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
   int textHeight = tft.fontHeight();
   int valueHeight =
       textHeight +

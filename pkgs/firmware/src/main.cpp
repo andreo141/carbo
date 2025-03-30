@@ -26,11 +26,10 @@ LcdDisplay *display = new LcdDisplay();
 
 uint16_t co2 = 0;
 float temperature = 0.0f;
-float humidity = 0.0f;
+uint16_t humidity = 0;
 
 struct SensorReading {
   uint16_t co2;
-  float temperature;
   time_t timestamp;
 };
 
@@ -39,7 +38,6 @@ int readingIndex = 0;
 
 // Variables used to calculate the average of the last x minutes, and create aggregate readings
 uint16_t totalCO2 = 0;
-float totalTemperature = 0;
 uint16_t currentPeriodCount = 0;
 unsigned long lastAggregationTime = 0;
 
@@ -65,7 +63,6 @@ void sendHistory() {
     JsonObject reading = data.createNestedObject();
     reading["timestamp"] = dataBuffer[idx].timestamp;
     reading["co2"] = dataBuffer[idx].co2;
-    reading["temperature"] = dataBuffer[idx].temperature;
   }
 
   String output;
@@ -80,9 +77,9 @@ void sendLatestReading() {
   msg["type"] = "latest_reading";
   JsonObject data = msg.createNestedObject("data");
 
-  data["co2"] = String(co2);
-  data["humidity"] = String(humidity);
-  data["temperature"] = String(temperature);
+  data["co2"] = co2;
+  data["humidity"] = humidity;
+  data["temperature"] = temperature;
 
   String output;
   serializeJson(msg, output);
@@ -91,10 +88,9 @@ void sendLatestReading() {
   notifyClients(output);
 }
 
-void storeSensorData(uint16_t co2, float temp, float humidity) {
+void storeSensorData(uint16_t co2) {
   // Accumulate readings
   totalCO2 += co2;
-  totalTemperature += temperature;
   currentPeriodCount++;
 
   // every x minutes, calculate and process the avg
@@ -103,7 +99,6 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
       // Calculate averages
       dataBuffer[readingIndex] = {
         static_cast<uint16_t>(totalCO2 / currentPeriodCount),
-        totalTemperature / currentPeriodCount,
         time(nullptr)
       };
 
@@ -112,7 +107,6 @@ void storeSensorData(uint16_t co2, float temp, float humidity) {
 
       // Reset aggregation variables
       totalCO2 = 0;
-      totalTemperature = 0;
       currentPeriodCount = 0;
     }
 
@@ -228,10 +222,10 @@ void loop() {
     if (mySensor.readMeasurement()) { // Only update if new data is available
       co2 = mySensor.getCO2();
       temperature = mySensor.getTemperature();
-      humidity = mySensor.getHumidity();
+      humidity = static_cast<uint16_t>(mySensor.getHumidity());
 
       // Store sensor data in buffer
-      storeSensorData(co2, temperature, humidity);
+      storeSensorData(co2);
 
       Serial.print("CO2: ");
       Serial.print(co2);
