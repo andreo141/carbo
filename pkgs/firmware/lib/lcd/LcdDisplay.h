@@ -9,7 +9,7 @@ public:;
     void begin();
     void clear();
     void drawStaticContent();
-    void updateValues(uint16_t co2, float temperature, float humidity);
+    void updateValues(uint16_t co2, float temperature, uint16_t humidity);
     static constexpr int LABEL_X = 20;
     static constexpr int VALUE_X = 170;
     static constexpr int FIRST_ROW_Y = 80;

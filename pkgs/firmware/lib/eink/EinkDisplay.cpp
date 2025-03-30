@@ -35,7 +35,7 @@ void EinkDisplay::drawStaticContent() {
   } while (display.nextPage());
 }
 
-void EinkDisplay::updateValues(uint16_t co2, float temperature, float humidity) {
+void EinkDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
   updateCount++;
 
   if (updateCount >= FULL_REFRESH_INTERVAL) {
@@ -46,7 +46,7 @@ void EinkDisplay::updateValues(uint16_t co2, float temperature, float humidity) 
   }
 }
 
-void EinkDisplay::fullUpdate(uint16_t co2, float temperature, float humidity) {
+void EinkDisplay::fullUpdate(uint16_t co2, float temperature, uint16_t humidity) {
   display.setFullWindow();
   display.firstPage();
   do {
@@ -76,7 +76,7 @@ void EinkDisplay::fullUpdate(uint16_t co2, float temperature, float humidity) {
   } while (display.nextPage());
 }
 
-void EinkDisplay::partialUpdate(uint16_t co2, float temperature, float humidity) {
+void EinkDisplay::partialUpdate(uint16_t co2, float temperature, uint16_t humidity) {
   // Define areas for each value
   const int valueX = 150;
   const int co2Y = 40;

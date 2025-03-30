@@ -18,11 +18,11 @@ public:
   void begin();
   void clear();
   void drawStaticContent();
-  void updateValues(uint16_t co2, float temperature, float humidity);
+  void updateValues(uint16_t co2, float temperature, uint16_t humidity);
 
 private:
-  void fullUpdate(uint16_t co2, float temperature, float humidity);
-  void partialUpdate(uint16_t co2, float temperature, float humidity);
+  void fullUpdate(uint16_t co2, float temperature, uint16_t humidity);
+  void partialUpdate(uint16_t co2, float temperature, uint16_t humidity);
 };
 
 #endif
