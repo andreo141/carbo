@@ -1,0 +1,15 @@
+services:
+  # backend:
+  #   image: carbo-backend:latest
+  #   restart: always
+  #   ports:
+  #     - "3000:3000"
+  influxdb:
+    image: influxdb:latest
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2:rw
+#    env_file:
+#      - .env
+    ports:
+      - 8086:8086
+    restart: unless-stopped

@@ -1,0 +1,14 @@
+{
+  "name": "carbo-backend",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.35.0"
+  }
+}
