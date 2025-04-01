@@ -90,6 +90,7 @@ void sendHistory() {
 void sendLatestReading() {
   JsonDocument msg;
   msg["type"] = "latest_reading";
+  msg["mac"] = MacAddress; // Pass unique identifier for the data to the backend
   JsonObject data = msg.createNestedObject("data");
 
   data["co2"] = co2;
@@ -118,9 +119,7 @@ void storeSensorData(uint16_t co2) {
     if (currentPeriodCount > 0) {
       // Calculate averages
       dataBuffer[readingIndex] = {
-        static_cast<uint16_t>(totalCO2 / currentPeriodCount),
-        time(nullptr)
-      };
+          static_cast<uint16_t>(totalCO2 / currentPeriodCount), time(nullptr)};
 
       // Move to next index, wrap around if needed
       readingIndex = (readingIndex + 1) % MAX_READINGS;
@@ -212,6 +211,7 @@ void setup() {
   syncWithNTP(); // Needed to have accurate timestamps available
   initSPIFFS();
   initWebSocket();
+  MacAddress = WiFi.macAddress(); // Init unique identifier
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/index.html", "text/html");
