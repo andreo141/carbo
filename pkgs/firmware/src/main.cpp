@@ -26,6 +26,7 @@ LcdDisplay *display = new LcdDisplay();
 #define CARBO_UPDATE_INTERVAL 30000 // refresh sensor readings every 30s
 static unsigned long lastHistoryUpdate = millis();
 static unsigned long lastCarboUpdate = 0;
+String MacAddress;
 
 uint16_t co2 = 0;
 float temperature = 0.0f;
