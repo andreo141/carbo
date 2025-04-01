@@ -18,12 +18,14 @@ SCD4x mySensor;
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
 EinkDisplay *display = new EinkDisplay();
-#define DISPLAY_UPDATE_INTERVAL 5000 // 5 seconds for eink
 #else
 #include "LcdDisplay.h"
 LcdDisplay *display = new LcdDisplay();
-#define DISPLAY_UPDATE_INTERVAL 5000 // 5 seconds for LCD
 #endif
+
+#define CARBO_UPDATE_INTERVAL 30000 // refresh sensor readings every 30s
+static unsigned long lastHistoryUpdate = millis();
+static unsigned long lastCarboUpdate = 0;
 
 uint16_t co2 = 0;
 float temperature = 0.0f;
@@ -230,12 +232,9 @@ void setup() {
   Serial.println("Setup complete!");
 }
 
-static unsigned long lastHistoryUpdate = millis();
 void loop() {
-  static unsigned long lastDisplayUpdate = 0;
-
-  if (millis() - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
-    lastDisplayUpdate = millis();
+  if (millis() - lastCarboUpdate >= CARBO_UPDATE_INTERVAL) {
+    lastCarboUpdate = millis();
 
     if (mySensor.readMeasurement()) { // Only update if new data is available
       co2 = mySensor.getCO2();
