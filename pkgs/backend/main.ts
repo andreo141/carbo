@@ -9,22 +9,31 @@ const influxdb = new InfluxDB({ url, token: token });
 const writeClient = influxdb.getWriteApi(org, bucket);
 
 interface CarboData {
+  mac: string;
   data: {
     co2: number;
     temperature: number;
     humidity: number;
     timestamp: number;
-  }
+  };
 }
 
 Bun.serve({
   routes: {
     "/latestReading": {
       POST: async (req) => {
-        const body = await req.json() as CarboData;
+        const body = (await req.json()) as CarboData;
         const { co2, temperature, humidity, timestamp } = body.data;
+        const mac = body.mac;
         const influxTimestamp = new Date(timestamp * 1000);
-        console.log('received latest reading', co2, temperature, humidity, timestamp);
+        console.log(
+          "received latest reading",
+          mac,
+          co2,
+          temperature,
+          humidity,
+          timestamp
+        );
 
         // Write latestReading to influxdb
         const point = new Point("carbo measurement")
