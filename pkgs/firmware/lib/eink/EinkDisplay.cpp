@@ -36,14 +36,17 @@ void EinkDisplay::drawStaticContent() {
 }
 
 void EinkDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
-  updateCount++;
+  partialUpdate(co2, temperature, humidity);
 
-  if (updateCount >= FULL_REFRESH_INTERVAL) {
-    fullUpdate(co2, temperature, humidity);
-    updateCount = 0;
-  } else {
-    partialUpdate(co2, temperature, humidity);
-  }
+  // Implementation to full refresh every x amount of partialUpdates, but it's not needed atm
+  // updateCount++;
+
+  // if (updateCount >= FULL_REFRESH_INTERVAL) {
+  //   fullUpdate(co2, temperature, humidity);
+  //   updateCount = 0;
+  // } else {
+  //   partialUpdate(co2, temperature, humidity);
+  // }
 }
 
 void EinkDisplay::fullUpdate(uint16_t co2, float temperature, uint16_t humidity) {
