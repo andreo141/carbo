@@ -19,6 +19,7 @@ interface CarboData {
 }
 
 Bun.serve({
+  port: 3000,
   routes: {
     "/latestReading": {
       POST: async (req) => {
@@ -54,3 +55,5 @@ Bun.serve({
     return new Response("Route not found", { status: 404 });
   },
 });
+
+console.log("carbo-backend is running on localhost:3000");
