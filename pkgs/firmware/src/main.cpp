@@ -12,7 +12,6 @@
 #define LCD 2
 SCD4x mySensor;
 
-// TODO: find ideal value
 #define MAX_READINGS 288 // 1 reading per 5 minute or 12 readings per hour: 12 * 24 hours = 288
 
 #if DISPLAY_TYPE == EINK
@@ -24,8 +23,9 @@ LcdDisplay *display = new LcdDisplay();
 #endif
 
 #define CARBO_UPDATE_INTERVAL 30000 // refresh sensor readings every 30s
-static unsigned long lastHistoryUpdate = millis();
+static unsigned long lastHistoryUpdate = 0;
 static unsigned long lastCarboUpdate = 0;
+boolean firstTime = true; // Boolean to immediately run the setup
 String MacAddress;
 
 uint16_t co2 = 0;
@@ -66,7 +66,7 @@ void sendToBackend(String jsonString, String url) {
   http.end();
 }
 
-void sendHistory() {
+void sendHistoryWithWebsockets() {
   JsonDocument msg;
   msg["type"] = "history";
   JsonArray data = msg.createNestedArray("data");
@@ -88,7 +88,7 @@ void sendHistory() {
   notifyClients(output);
 }
 
-void sendLatestReading() {
+String getLatestReadingJson() {
   JsonDocument msg;
   msg["type"] = "latest_reading";
   msg["mac"] = MacAddress; // Pass unique identifier for the data to the backend
@@ -103,11 +103,16 @@ void sendLatestReading() {
   serializeJson(msg, output);
 
   Serial.println("sending latest reading:");
+
+  return output;
+}
+
+void sendLatestReading(String latestReadingJson) {
   // Send via WebSocket to client
-  notifyClients(output);
+  notifyClients(latestReadingJson);
 
   // Send via REST to backend
-  sendToBackend(output, String(BACKEND_URL) + "/latestReading");
+  sendToBackend(latestReadingJson, String(BACKEND_URL) + "/latestReading");
 }
 
 void storeSensorData(uint16_t co2) {
@@ -156,8 +161,8 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     Serial.printf("WebSocket client #%u connected from %s\n", client->id(),
                   client->remoteIP().toString().c_str());
     // Send latest_reading and history on client connect
-    sendLatestReading();
-    sendHistory();
+    notifyClients(getLatestReadingJson());
+    sendHistoryWithWebsockets();
     break;
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected\n", client->id());
@@ -217,9 +222,7 @@ void setup() {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/index.html", "text/html");
   });
-
   server.serveStatic("/", SPIFFS, "/");
-
   server.begin();
 
   if (mySensor.begin() == false) {
@@ -234,8 +237,9 @@ void setup() {
 }
 
 void loop() {
-  if (millis() - lastCarboUpdate >= CARBO_UPDATE_INTERVAL) {
+  if (millis() - lastCarboUpdate >= CARBO_UPDATE_INTERVAL || firstTime) {
     lastCarboUpdate = millis();
+    firstTime = false;
 
     if (mySensor.readMeasurement()) { // Only update if new data is available
       co2 = mySensor.getCO2();
@@ -259,13 +263,13 @@ void loop() {
 
       display->updateValues(co2, temperature, humidity);
 
-      // Send data via WebSocket
-      sendLatestReading();
+      // Send data via WebSocket to client & via REST to database
+      sendLatestReading(getLatestReadingJson());
 
       // Send history every 5m for now
       if (millis() - lastHistoryUpdate >= 5 * 60 * 1000) {
         lastHistoryUpdate = millis();
-        sendHistory();
+        sendHistoryWithWebsockets();
       }
     } else {
       Serial.print(".");
