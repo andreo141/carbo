@@ -33,11 +33,12 @@ Bun.serve({
           co2,
           temperature,
           humidity,
-          timestamp
+          timestamp,
         );
 
         // Write latestReading to influxdb
         const point = new Point("carbo measurement")
+          .tag("device_id", mac)
           .uintField("co2", co2)
           .floatField("temperature", temperature)
           .uintField("humidity", humidity)
