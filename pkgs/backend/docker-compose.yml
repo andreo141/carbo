@@ -3,14 +3,16 @@ services:
     build:
       context: .
     restart: always
+    env_file: .env
+    environment:
+      - NODE_ENV=production
     ports:
       - "3000:3000"
   influxdb:
     image: influxdb:latest
     volumes:
       - ./influxdb/data:/var/lib/influxdb2:rw
-    env_file:
-      - .env
+    env_file: .env
     ports:
       - 8086:8086
     restart: unless-stopped
