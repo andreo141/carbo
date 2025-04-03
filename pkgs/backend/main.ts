@@ -1,9 +1,12 @@
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
 
-const url = "http://localhost:8086";
-const token = process.env.INFLUXDB_KEY;
-const org = process.env.INFLUXDB_ORG || "carbo";
-const bucket = process.env.INFLUXDB_BUCKET || "carbo";
+const url =
+  process.env.NODE_ENV === "production"
+    ? "http://influxdb:8086"
+    : "http://localhost:8086";
+const token = process.env.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN;
+const org = process.env.DOCKER_INFLUXDB_INIT_ORG || "carbo";
+const bucket = process.env.DOCKER_INFLUXDB_INIT_BUCKET || "carbo";
 
 const influxdb = new InfluxDB({ url, token: token });
 const writeClient = influxdb.getWriteApi(org, bucket);
