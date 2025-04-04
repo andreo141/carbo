@@ -26,6 +26,19 @@
 | GND       | GND        |
 | VCC       | 3V3        |
 
+### E-Ink Display
+
+|  Pin    | ESP32 GPIO |
+| -------------- | ---------- |
+| BUSY	GPIO      | 4          |
+| RST (RES)	GPIO | 16         |
+| DC	GPIO        | 17         |
+| CS	GPIO        | 5          |
+| SCL (CLK)	GPIO | 18         |
+| SDA (DIN)	GPIO | 23         |
+| GND            | GND        |
+| VCC            | 3V3        |
+
 
 ## Getting started
 ### Connect your ESP32 to WiFi
