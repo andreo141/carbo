@@ -24,6 +24,15 @@ interface CarboData {
 Bun.serve({
   port: 3000,
   routes: {
+    "/": (req) => {
+      const formatMemoryUsage = (data: any) =>
+        `${Math.round((data / 1024 / 1024) * 100) / 100} MB`;
+      const memoryData = process.memoryUsage();
+
+      return new Response(
+        `carbo-backend is running with ${formatMemoryUsage(memoryData.heapUsed)} MB RAM.`,
+      );
+    },
     "/latestReading": {
       POST: async (req) => {
         const body = (await req.json()) as CarboData;
