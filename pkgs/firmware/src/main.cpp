@@ -12,7 +12,8 @@
 #define LCD 2
 SCD4x mySensor;
 
-#define MAX_READINGS 288 // 1 reading per 5 minute or 12 readings per hour: 12 * 24 hours = 288
+#define MAX_READINGS                                                           \
+  288 // 1 reading per 5 minute or 12 readings per hour: 12 * 24 hours = 288
 
 #if DISPLAY_TYPE == EINK
 #include "EinkDisplay.h"
@@ -22,7 +23,7 @@ EinkDisplay *display = new EinkDisplay();
 LcdDisplay *display = new LcdDisplay();
 #endif
 
-#define CARBO_UPDATE_INTERVAL 30000 // refresh sensor readings every 30s
+#define CARBO_UPDATE_INTERVAL 15000 // refresh sensor readings every 15s
 static unsigned long lastHistoryUpdate = 0;
 static unsigned long lastCarboUpdate = 0;
 boolean firstTime = true; // Boolean to immediately run the setup
@@ -41,7 +42,8 @@ struct SensorReading {
 SensorReading dataBuffer[MAX_READINGS];
 int readingIndex = 0;
 
-// Variables used to calculate the average of the last x minutes, and create aggregate readings
+// Variables used to calculate the average of the last x minutes, and create
+// aggregate readings
 uint16_t totalCO2 = 0;
 uint16_t currentPeriodCount = 0;
 unsigned long lastAggregationTime = 0;
@@ -239,16 +241,17 @@ void setup() {
 void loop() {
   if (millis() - lastCarboUpdate >= CARBO_UPDATE_INTERVAL || firstTime) {
     lastCarboUpdate = millis();
-    firstTime = false;
 
     if (mySensor.readMeasurement()) { // Only update if new data is available
+      firstTime = false;
+
       co2 = mySensor.getCO2();
       temperature = mySensor.getTemperature();
       humidity = static_cast<uint16_t>(mySensor.getHumidity());
       timestamp = time(nullptr);
 
       // Store sensor data in buffer
-      storeSensorData(co2);
+      // storeSensorData(co2);
 
       Serial.print("CO2: ");
       Serial.print(co2);
@@ -277,5 +280,5 @@ void loop() {
   }
 
   ws.cleanupClients(); // Keep WebSockets responsive
-  delay(1);            // Small delay to avoid CPU overload
+  delay(100);            // Small delay to avoid CPU overload
 }
