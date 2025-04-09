@@ -30,24 +30,43 @@ void LcdDisplay::clear() { tft.fillScreen(TFT_BLACK); }
 void LcdDisplay::drawStaticContent() {
   const char* label = "ppm";
   int16_t labelWidth = tft.textWidth(label);
-  drawLabel(label, (screenWidth - labelWidth) / 2 , 175);
+  drawLabel(label, (screenWidth - labelWidth) / 2 , 155);
 }
 
 void LcdDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
+  String co2String = String(co2);
+  String tempString = String(temperature);
+  String humidityString = String(humidity);
+
+  // CO2
   tft.setTextColor(getCO2Color(co2));
   tft.setTextSize(3);
-
-  String co2String = String(co2);
-  int16_t padding = 10;  // or whatever looks nice visually
-  int16_t co2ValueHeight = tft.fontHeight();
+  int16_t xPadding = 10;
+  int16_t yPadding = 20;
+  int16_t primaryFontHeight = tft.fontHeight();
   int16_t co2ValueWidth = tft.textWidth(co2String);
-  int16_t x = (screenWidth - co2ValueWidth) / 2 - padding;
-  int16_t y = ((screenHeight - co2ValueHeight) / 2) - padding;
-  int16_t baselineOffset = tft.fontHeight() * 0.8;
-
-  tft.fillRect(x, y, co2ValueWidth + (2 * padding), co2ValueHeight, TFT_BLACK);
-  tft.setCursor(x + padding, y + baselineOffset);
+  int16_t x = (screenWidth - co2ValueWidth) / 2 - xPadding;
+  int16_t y = ((screenHeight - primaryFontHeight) / 2) - yPadding;
+  int16_t primaryBaselineOffset = tft.fontHeight() * 0.8;
+  tft.fillRect(x, y, co2ValueWidth + (2 * xPadding), primaryFontHeight, TFT_BLACK);
+  tft.setCursor(x + xPadding, y + primaryBaselineOffset);
   tft.print(co2String);
+
+  // Temperature
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(1);
+  int16_t secondaryFontHeight = tft.fontHeight();
+  int16_t secondaryBaselineOffset = secondaryFontHeight * 0.8;
+  int16_t tempValueWidth = tft.textWidth(tempString);
+  tft.fillRect(30, 200, tempValueWidth, secondaryFontHeight, TFT_BLACK);
+  tft.setCursor(30, 200 + secondaryBaselineOffset);
+  tft.print(tempString);
+
+  // Humidity
+  int16_t humidityValueWidth = tft.textWidth(humidityString);
+  tft.fillRect(screenWidth - humidityValueWidth - 30, 200, humidityValueWidth, secondaryFontHeight, TFT_BLACK);
+  tft.setCursor(screenWidth - humidityValueWidth - 30, 200 + secondaryBaselineOffset);
+  tft.print(humidityString);
 }
 
 void LcdDisplay::drawLabel(const char *label, int16_t x, int16_t y) {
