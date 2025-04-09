@@ -30,24 +30,24 @@ void LcdDisplay::clear() { tft.fillScreen(TFT_BLACK); }
 void LcdDisplay::drawStaticContent() {
   const char* label = "ppm";
   int16_t labelWidth = tft.textWidth(label);
-  drawLabel(label, (screenWidth - labelWidth) / 2 , 180);
+  drawLabel(label, (screenWidth - labelWidth) / 2 , 175);
 }
 
 void LcdDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
-  
   tft.setTextColor(getCO2Color(co2));
   tft.setTextSize(3);
 
   String co2String = String(co2);
-  int16_t maxCo2ValueWidth = tft.textWidth("9999."); // point adds extra margin on right 
+  int16_t padding = 10;  // or whatever looks nice visually
   int16_t co2ValueHeight = tft.fontHeight();
-  int16_t x = (screenWidth - maxCo2ValueWidth) / 2;
-  int16_t y = (screenHeight - co2ValueHeight) / 2;
+  int16_t co2ValueWidth = tft.textWidth(co2String);
+  int16_t x = (screenWidth - co2ValueWidth) / 2 - padding;
+  int16_t y = ((screenHeight - co2ValueHeight) / 2) - padding;
   int16_t baselineOffset = tft.fontHeight() * 0.8;
-  
-  tft.fillRect(x, y, maxCo2ValueWidth, co2ValueHeight, TFT_BLACK);
-  tft.setCursor(x, y + baselineOffset);
-  tft.print(co2);
+
+  tft.fillRect(x, y, co2ValueWidth + (2 * padding), co2ValueHeight, TFT_BLACK);
+  tft.setCursor(x + padding, y + baselineOffset);
+  tft.print(co2String);
 }
 
 void LcdDisplay::drawLabel(const char *label, int16_t x, int16_t y) {
