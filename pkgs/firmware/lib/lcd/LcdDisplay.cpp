@@ -1,4 +1,6 @@
 #include "LcdDisplay.h"
+#include "Thermometer.h"
+#include "Humidity.h"
 
 uint16_t getCO2Color(uint16_t co2) {
   if (co2 < 600) {
@@ -22,6 +24,7 @@ void LcdDisplay::begin() {
   tft.fillScreen(TFT_BLACK);
   tft.setFreeFont(&FreeSans12pt7b);
   tft.setTextSize(1);
+  maxHumidityValueWidth = tft.textWidth("100"); // Max humidity value width
 
 }
 
@@ -31,6 +34,8 @@ void LcdDisplay::drawStaticContent() {
   const char* label = "ppm";
   int16_t labelWidth = tft.textWidth(label);
   drawLabel(label, (screenWidth - labelWidth) / 2 , 155);
+  tft.drawBitmap(20, 205, thermometer_bitmap, 20, 20, TFT_WHITE);
+  tft.drawBitmap(screenWidth - maxHumidityValueWidth - 50, 205, humidity_bitmap, 20, 20, TFT_WHITE);
 }
 
 void LcdDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity) {
@@ -58,8 +63,8 @@ void LcdDisplay::updateValues(uint16_t co2, float temperature, uint16_t humidity
   int16_t secondaryFontHeight = tft.fontHeight();
   int16_t secondaryBaselineOffset = secondaryFontHeight * 0.8;
   int16_t tempValueWidth = tft.textWidth(tempString);
-  tft.fillRect(30, 200, tempValueWidth, secondaryFontHeight, TFT_BLACK);
-  tft.setCursor(30, 200 + secondaryBaselineOffset);
+  tft.fillRect(50, 200, tempValueWidth, secondaryFontHeight, TFT_BLACK);
+  tft.setCursor(50, 200 + secondaryBaselineOffset);
   tft.print(tempString);
 
   // Humidity

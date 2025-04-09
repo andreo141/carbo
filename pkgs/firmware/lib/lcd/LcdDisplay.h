@@ -14,7 +14,7 @@ private:
     TFT_eSPI tft;
     int16_t screenWidth;
     int16_t screenHeight;
+    int16_t maxHumidityValueWidth;
     void drawLabel(const char* label, int16_t x, int16_t y);
 };
-
 #endif
