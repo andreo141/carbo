@@ -10,6 +10,8 @@ carbo/
 
 ## Architecture
 ![image](https://github.com/user-attachments/assets/028a8e3d-0414-4822-a578-994aa17a99ec)
+### InfluxDB dashboard
+![image](https://github.com/user-attachments/assets/717fd635-c727-490f-b165-8b0cb1f59a1b)
 
 
 ## Requirements
