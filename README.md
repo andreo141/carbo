@@ -8,6 +8,7 @@ carbo/
 │   ├── <a href="./pkgs/backend">backend</a>: NodeJS backend connecting with influxdb database.
 </pre>
 
+## Architecture
 ![image](https://github.com/user-attachments/assets/028a8e3d-0414-4822-a578-994aa17a99ec)
 
 
